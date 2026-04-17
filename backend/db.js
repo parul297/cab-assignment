@@ -1,8 +1,16 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const dbPath = path.join(__dirname, 'cab.db');
-const db = new Database(dbPath);
+let db;
+
+try {
+  const dbPath = path.join(__dirname, 'cab.db');
+  db = new Database(dbPath);
+  console.log("Database connected");
+} catch (err) {
+  console.error("Database error:", err);
+  process.exit(1);
+}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS drivers (
