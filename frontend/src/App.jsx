@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import AddDriver from './components/AddDriver'
-import RequestRide from './components/RequestRide'
+import AddDriver from './Components/AddDriver.jsx'
+import RequestRide from './components/RequestRide.jsx'
 
 function App() {
   const [activeTab, setActiveTab] = useState('drivers')
