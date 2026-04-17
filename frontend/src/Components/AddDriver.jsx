@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import axios from 'axios'
 
+const BASE_URL = "https://cab-assignment-production.up.railway.app"
+
 function AddDriver() {
   const [name, setName] = useState('')
   const [x, setX] = useState('')
@@ -24,7 +26,7 @@ function AddDriver() {
     }
     setLoading(true)
     try {
-      const res = await axios.post('http://localhost:5000/drivers', {
+      const res = await axios.post(`${BASE_URL}/drivers`, {
         name, x: parseInt(x), y: parseInt(y)
       })
       setMessage(`Driver "${res.data.name}" added at (${res.data.x}, ${res.data.y})`)

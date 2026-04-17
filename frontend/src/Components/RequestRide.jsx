@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import axios from 'axios'
 
+const BASE_URL = "https://cab-assignment-production.up.railway.app"
+
 function RequestRide() {
   const [userName, setUserName] = useState('')
   const [x, setX] = useState('')
@@ -22,7 +24,7 @@ function RequestRide() {
     }
     setLoading(true)
     try {
-      const res = await axios.post('http://localhost:5000/rides/request', {
+      const res = await axios.post(`${BASE_URL}/rides/request`, {
         user_name: userName, user_x: parseInt(x), user_y: parseInt(y)
       })
       setResult(res.data)
