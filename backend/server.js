@@ -6,31 +6,30 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Get all drivers
+app.get("/", (req, res) => {
+  res.send("Cab Assignment Backend Running 🚀");
+});
+
 app.get('/drivers', (req, res) => {
   const drivers = db.prepare('SELECT * FROM drivers').all();
   res.json(drivers);
 });
 
-// Add a driver
 app.post('/drivers', (req, res) => {
   const { name, x, y } = req.body;
   const result = db.prepare('INSERT INTO drivers (name, x, y) VALUES (?, ?, ?)').run(name, x, y);
   res.json({ id: result.lastInsertRowid, name, x, y, available: 1 });
 });
 
-// Request a ride
 app.post('/rides/request', (req, res) => {
   const { user_name, user_x, user_y } = req.body;
 
-  // Get all available drivers
   const drivers = db.prepare('SELECT * FROM drivers WHERE available = 1').all();
 
   if (drivers.length === 0) {
     return res.status(400).json({ error: 'No drivers available' });
   }
 
-  // Find nearest driver using Euclidean distance
   let nearest = null;
   let minDistance = Infinity;
 
@@ -42,7 +41,6 @@ app.post('/rides/request', (req, res) => {
     }
   }
 
-  // Assign driver
   db.prepare('UPDATE drivers SET available = 0 WHERE id = ?').run(nearest.id);
   const result = db.prepare(
     'INSERT INTO rides (user_name, user_x, user_y, driver_id, status) VALUES (?, ?, ?, ?, ?)'
@@ -58,7 +56,6 @@ app.post('/rides/request', (req, res) => {
   });
 });
 
-// Get all rides
 app.get('/rides', (req, res) => {
   const rides = db.prepare(`
     SELECT rides.*, drivers.name as driver_name 
@@ -67,4 +64,8 @@ app.get('/rides', (req, res) => {
   res.json(rides);
 });
 
-app.listen(5000, () => console.log('Server running on http://localhost:5000'));
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
