@@ -1,0 +1,70 @@
+const express = require('express');
+const cors = require('cors');
+const db = require('./db');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Get all drivers
+app.get('/drivers', (req, res) => {
+  const drivers = db.prepare('SELECT * FROM drivers').all();
+  res.json(drivers);
+});
+
+// Add a driver
+app.post('/drivers', (req, res) => {
+  const { name, x, y } = req.body;
+  const result = db.prepare('INSERT INTO drivers (name, x, y) VALUES (?, ?, ?)').run(name, x, y);
+  res.json({ id: result.lastInsertRowid, name, x, y, available: 1 });
+});
+
+// Request a ride
+app.post('/rides/request', (req, res) => {
+  const { user_name, user_x, user_y } = req.body;
+
+  // Get all available drivers
+  const drivers = db.prepare('SELECT * FROM drivers WHERE available = 1').all();
+
+  if (drivers.length === 0) {
+    return res.status(400).json({ error: 'No drivers available' });
+  }
+
+  // Find nearest driver using Euclidean distance
+  let nearest = null;
+  let minDistance = Infinity;
+
+  for (const driver of drivers) {
+    const dist = Math.sqrt((driver.x - user_x) ** 2 + (driver.y - user_y) ** 2);
+    if (dist < minDistance) {
+      minDistance = dist;
+      nearest = driver;
+    }
+  }
+
+  // Assign driver
+  db.prepare('UPDATE drivers SET available = 0 WHERE id = ?').run(nearest.id);
+  const result = db.prepare(
+    'INSERT INTO rides (user_name, user_x, user_y, driver_id, status) VALUES (?, ?, ?, ?, ?)'
+  ).run(user_name, user_x, user_y, nearest.id, 'assigned');
+
+  res.json({
+    ride_id: result.lastInsertRowid,
+    user_name,
+    assigned_driver: nearest.name,
+    driver_x: nearest.x,
+    driver_y: nearest.y,
+    distance: minDistance.toFixed(2)
+  });
+});
+
+// Get all rides
+app.get('/rides', (req, res) => {
+  const rides = db.prepare(`
+    SELECT rides.*, drivers.name as driver_name 
+    FROM rides LEFT JOIN drivers ON rides.driver_id = drivers.id
+  `).all();
+  res.json(rides);
+});
+
+app.listen(5000, () => console.log('Server running on http://localhost:5000'));
